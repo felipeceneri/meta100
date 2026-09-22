@@ -100,4 +100,8 @@ as $$
   order by total_points desc;
 $$;
 
+-- Postgres concede EXECUTE a PUBLIC por padrão em toda função nova — sem este
+-- revoke, qualquer pessoa com a anon key (que é pública por design) conseguiria
+-- ler apelido + pontuação de todo mundo sem estar logada.
+revoke execute on function get_leaderboard() from public, anon;
 grant execute on function get_leaderboard() to authenticated;
