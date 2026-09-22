@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase'
 import { Login } from './components/Login'
 import { CheckInView } from './components/CheckInView'
 import { HabitsView } from './components/HabitsView'
+import { StatsView } from './components/StatsView'
 
 type Tab = 'hoje' | 'habitos' | 'estatisticas'
 
@@ -51,11 +52,7 @@ function App() {
 
         {tab === 'hoje' && <CheckInView />}
         {tab === 'habitos' && <HabitsView />}
-        {tab === 'estatisticas' && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-center text-slate-400">
-            Estatísticas de evolução chegam na próxima fase.
-          </div>
-        )}
+        {tab === 'estatisticas' && <StatsView />}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 border-t border-slate-800 bg-slate-950/95 backdrop-blur">

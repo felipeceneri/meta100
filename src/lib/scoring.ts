@@ -7,6 +7,9 @@ export function todayISO(d = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
+// Usa só os hábitos ativos AGORA — arquivar um hábito recalcula o peso total
+// também pros dias passados no histórico. Aceitável enquanto não houver
+// necessidade real de congelar o conjunto de hábitos por dia.
 export function computeDayScore(
   habits: Habit[],
   checkins: CheckIn[],
