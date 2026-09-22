@@ -15,21 +15,27 @@ o histórico e as estatísticas ao longo do tempo.
 3. **Bônus livre** — atividades extras são um registro livre (descrição + pontos),
    somando por cima do resultado do dia sem limite superior.
 4. **Stack**: Vite + React + TypeScript + Tailwind no front, Supabase (Postgres +
-   Auth) como backend. Fase 1 roda só com `localStorage` pra validar a UX antes de
-   plugar o Supabase.
-5. **Hospedagem**: GitHub Pages, deploy automático via GitHub Actions a cada push
-   em `main`. Repositório: https://github.com/felipeceneri/meta100.
+   Auth) como backend.
+5. **Auth de usuário único, sem cadastro público** — não existe tela de "criar conta"
+   no app. O usuário é provisionado direto no painel do Supabase
+   (Authentication → Users → Add user), e o app só tem login. RLS garante que cada
+   linha só é visível pro próprio dono (`user_id = auth.uid()`).
+6. **Hospedagem**: GitHub Pages, deploy automático via GitHub Actions a cada push
+   em `main`. Repositório: https://github.com/felipeceneri/meta100. As variáveis
+   `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (a chave anon é pública por design)
+   ficam como GitHub Actions secrets do repositório.
 
 ## Roadmap
 
 - [x] Fase 1 — scaffold + check-in/hábitos com dados locais (`localStorage`)
-- [ ] Fase 2 — Supabase (schema em `supabase/schema.sql`, auth de usuário único, RLS)
+- [x] Fase 2 — Supabase (schema em `supabase/schema.sql`, auth de usuário único, RLS)
 - [ ] Fase 3 — painel de estatísticas/evolução (histórico, streak, % por hábito)
-- [ ] Fase 4 — GitHub Actions + deploy no GitHub Pages
+- [x] Fase 4 — GitHub Actions + deploy no GitHub Pages
 
 ## Desenvolvimento
 
 ```bash
 npm install
+cp .env.example .env.local  # preencher com os dados do seu projeto Supabase
 npm run dev
 ```
