@@ -24,12 +24,16 @@ o histórico e as estatísticas ao longo do tempo.
    em `main`. Repositório: https://github.com/felipeceneri/meta100. As variáveis
    `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (a chave anon é pública por design)
    ficam como GitHub Actions secrets do repositório.
+7. **Painel de estatísticas** usa sempre os hábitos ativos *atuais* pra recalcular
+   dias passados (não existe um "arquivado em X data" ainda) — arquivar um hábito
+   muda a % histórica retroativamente. Limitação conhecida, ver comentário em
+   `src/lib/scoring.ts`.
 
 ## Roadmap
 
 - [x] Fase 1 — scaffold + check-in/hábitos com dados locais (`localStorage`)
 - [x] Fase 2 — Supabase (schema em `supabase/schema.sql`, auth de usuário único, RLS)
-- [ ] Fase 3 — painel de estatísticas/evolução (histórico, streak, % por hábito)
+- [x] Fase 3 — painel de estatísticas/evolução (histórico, streak, % por hábito)
 - [x] Fase 4 — GitHub Actions + deploy no GitHub Pages
 
 ## Desenvolvimento
