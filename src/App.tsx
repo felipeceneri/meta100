@@ -5,8 +5,9 @@ import { Login } from './components/Login'
 import { CheckInView } from './components/CheckInView'
 import { HabitsView } from './components/HabitsView'
 import { StatsView } from './components/StatsView'
+import { RankingView } from './components/RankingView'
 
-type Tab = 'hoje' | 'habitos' | 'estatisticas'
+type Tab = 'hoje' | 'habitos' | 'ranking' | 'estatisticas'
 
 function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -52,6 +53,7 @@ function App() {
 
         {tab === 'hoje' && <CheckInView />}
         {tab === 'habitos' && <HabitsView />}
+        {tab === 'ranking' && <RankingView />}
         {tab === 'estatisticas' && <StatsView />}
       </div>
 
@@ -59,11 +61,8 @@ function App() {
         <div className="mx-auto flex max-w-2xl">
           <TabButton label="Hoje" active={tab === 'hoje'} onClick={() => setTab('hoje')} />
           <TabButton label="Hábitos" active={tab === 'habitos'} onClick={() => setTab('habitos')} />
-          <TabButton
-            label="Estatísticas"
-            active={tab === 'estatisticas'}
-            onClick={() => setTab('estatisticas')}
-          />
+          <TabButton label="Ranking" active={tab === 'ranking'} onClick={() => setTab('ranking')} />
+          <TabButton label="Stats" active={tab === 'estatisticas'} onClick={() => setTab('estatisticas')} />
         </div>
       </nav>
     </div>

@@ -1,11 +1,12 @@
--- meta100 — schema inicial (Fase 2)
--- Rodar no SQL Editor do projeto Supabase (https://supabase.com/dashboard/project/_/sql/new)
+-- meta100 — schema completo e atual
+-- Pra um projeto Supabase novo, roda só este arquivo (não precisa dos migration_*.sql,
+-- que existem pra quem já tinha um projeto num estado anterior).
+-- SQL Editor: https://supabase.com/dashboard/project/_/sql/new
 
 create table if not exists habits (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
-  weight numeric not null default 1,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -23,7 +24,6 @@ create table if not exists bonus_activities (
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
   description text not null,
-  points numeric not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -39,3 +39,65 @@ create policy "checkins: only owner" on checkins
 
 create policy "bonus_activities: only owner" on bonus_activities
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Pontuação (calculada no código e nas queries, nunca guardada como valor solto):
+--   check-in "sim" = +10 · check-in "nao" = -10 · bônus = +50 por linha.
+
+-- Perfis: só o que pode ficar público (apelido) pro ranking.
+create table if not exists profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  display_name text not null unique,
+  created_at timestamptz not null default now()
+);
+
+alter table profiles enable row level security;
+
+create policy "profiles: visível pra quem está logado" on profiles
+  for select using (auth.uid() is not null);
+
+create policy "profiles: só o dono atualiza o próprio" on profiles
+  for update using (auth.uid() = id) with check (auth.uid() = id);
+
+create or replace function handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(new.raw_user_meta_data ->> 'display_name', split_part(new.email, '@', 1)));
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();
+
+-- Ranking: agrega pontos de todo mundo sem expor hábitos/check-ins de ninguém.
+create or replace function get_leaderboard()
+returns table (display_name text, total_points bigint)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    p.display_name,
+    coalesce(c.pts, 0) + coalesce(b.pts, 0) as total_points
+  from profiles p
+  left join (
+    select user_id, sum(case status when 'sim' then 10 when 'nao' then -10 else 0 end)::bigint as pts
+    from checkins
+    group by user_id
+  ) c on c.user_id = p.id
+  left join (
+    select user_id, (count(*) * 50)::bigint as pts
+    from bonus_activities
+    group by user_id
+  ) b on b.user_id = p.id
+  order by total_points desc;
+$$;
+
+grant execute on function get_leaderboard() to authenticated;

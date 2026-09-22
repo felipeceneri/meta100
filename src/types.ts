@@ -3,8 +3,6 @@ export type CheckInStatus = 'sim' | 'nao'
 export interface Habit {
   id: string
   name: string
-  /** Peso relativo entre os hábitos ativos. Não precisa somar 100. */
-  weight: number
   active: boolean
   createdAt: string
 }
@@ -20,13 +18,25 @@ export interface BonusActivity {
   id: string
   date: string
   description: string
-  points: number
   createdAt: string
 }
 
 export interface DayScore {
-  /** -100..100, soma ponderada dos hábitos do dia */
-  habitScore: number
+  /** soma de +10/-10 por hábito marcado no dia */
+  habitPoints: number
+  /** contagem de bônus do dia × 50 */
   bonusPoints: number
   total: number
+  /** pontos possíveis no dia se todo hábito ativo for marcado "sim" */
+  perfectDayPoints: number
+}
+
+export interface Profile {
+  id: string
+  displayName: string
+}
+
+export interface LeaderboardEntry {
+  displayName: string
+  totalPoints: number
 }

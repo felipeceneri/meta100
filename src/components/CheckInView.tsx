@@ -8,7 +8,7 @@ import {
   getHabits,
   setCheckin,
 } from '../lib/store'
-import { computeDayScore, todayISO } from '../lib/scoring'
+import { BONUS_POINTS, computeDayScore, todayISO } from '../lib/scoring'
 import { ScoreDisplay } from './ScoreDisplay'
 
 const date = todayISO()
@@ -19,7 +19,6 @@ export function CheckInView() {
   const [bonuses, setBonuses] = useState<BonusActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [bonusDesc, setBonusDesc] = useState('')
-  const [bonusPoints, setBonusPoints] = useState(10)
 
   useEffect(() => {
     void loadAll()
@@ -56,12 +55,10 @@ export function CheckInView() {
       id: crypto.randomUUID(),
       date,
       description: bonusDesc.trim(),
-      points: bonusPoints,
       createdAt: new Date().toISOString(),
     })
     setBonuses(await getBonusActivities())
     setBonusDesc('')
-    setBonusPoints(10)
   }
 
   async function handleRemoveBonus(id: string) {
@@ -127,7 +124,7 @@ export function CheckInView() {
               <li key={b.id} className="flex items-center justify-between text-sm">
                 <span className="text-slate-300">{b.description}</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-amber-400">+{b.points}</span>
+                  <span className="font-medium text-amber-400">+{BONUS_POINTS}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveBonus(b.id)}
@@ -149,17 +146,11 @@ export function CheckInView() {
             placeholder="ex: corrida 5km, yoga..."
             className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-sky-500 focus:outline-none"
           />
-          <input
-            type="number"
-            value={bonusPoints}
-            onChange={(e) => setBonusPoints(Number(e.target.value))}
-            className="w-16 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
-          />
           <button
             type="submit"
-            className="rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-sky-950 hover:bg-sky-400"
+            className="whitespace-nowrap rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-sky-950 hover:bg-sky-400"
           >
-            + Add
+            +{BONUS_POINTS}
           </button>
         </form>
       </div>

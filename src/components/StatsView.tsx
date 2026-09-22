@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { BonusActivity, CheckIn, Habit } from '../types'
 import { getBonusActivities, getCheckins, getHabits } from '../lib/store'
-import { todayISO } from '../lib/scoring'
+import { BONUS_POINTS, HABIT_POINTS, todayISO } from '../lib/scoring'
 import {
   average,
   buildDailyEntries,
@@ -39,20 +39,21 @@ export function StatsView() {
   const entries7 = entries30.slice(-7)
   const entriesChart = entries30.slice(-CHART_DAYS)
   const streak = useMemo(() => currentStreak(entries30), [entries30])
-  const bonusTotal = useMemo(() => bonuses.reduce((s, b) => s + b.points, 0), [bonuses])
+  const bonusTotal = bonuses.length * BONUS_POINTS
   const hasAnyData = checkins.length > 0 || bonuses.length > 0
   const completion = useMemo(
     () => habitCompletionRates(habits, checkins, entries30[0]?.date ?? todayISO()),
     [habits, checkins, entries30],
   )
+  const activeHabitCount = habits.filter((h) => h.active).length
 
   if (loading) return <p className="text-slate-500">Carregando...</p>
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3">
-        <StatTile label="Média 7 dias" value={`${average(entries7).toFixed(0)}%`} />
-        <StatTile label="Média 30 dias" value={`${average(entries30).toFixed(0)}%`} />
+        <StatTile label="Média 7 dias" value={`${average(entries7).toFixed(0)} pts`} />
+        <StatTile label="Média 30 dias" value={`${average(entries30).toFixed(0)} pts`} />
         <StatTile label="Sequência atual" value={`${streak} ${streak === 1 ? 'dia' : 'dias'}`} />
         <StatTile label="Bônus acumulado" value={`+${bonusTotal}`} accent="amber" />
       </div>
@@ -62,7 +63,7 @@ export function StatsView() {
           <h2 className="text-sm font-semibold text-slate-200">Últimos {CHART_DAYS} dias</h2>
           <div className="flex items-center gap-3 text-[11px] text-slate-500">
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-sky-400" /> meta batida
+              <span className="h-2 w-2 rounded-full bg-sky-400" /> dia perfeito
             </span>
             <span className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-rose-500" /> abaixo de zero
@@ -70,7 +71,7 @@ export function StatsView() {
           </div>
         </div>
 
-        <DailyBarChart entries={entriesChart} />
+        <DailyBarChart entries={entriesChart} perfectDay={activeHabitCount * HABIT_POINTS} />
 
         {!hasAnyData && (
           <p className="mt-3 text-center text-sm text-slate-500">
@@ -124,14 +125,15 @@ function StatTile({
   )
 }
 
-function DailyBarChart({ entries }: { entries: DailyEntry[] }) {
+function DailyBarChart({ entries, perfectDay }: { entries: DailyEntry[]; perfectDay: number }) {
   const [selected, setSelected] = useState<number | null>(null)
 
-  const posMax = Math.max(100, ...entries.map((e) => Math.max(0, e.score.total)))
+  const floor = Math.max(perfectDay, 10)
+  const posMax = Math.max(floor, ...entries.map((e) => Math.max(0, e.score.total)))
   const negMax = Math.max(0, ...entries.map((e) => Math.max(0, -e.score.total)))
   const totalRange = posMax + negMax
   const baselineY = (posMax / totalRange) * CHART_HEIGHT
-  const goalY = baselineY - 100 * (CHART_HEIGHT / totalRange)
+  const goalY = baselineY - perfectDay * (CHART_HEIGHT / totalRange)
 
   const slotWidth = 100 / entries.length
   const activeIndex = selected ?? entries.length - 1
@@ -143,14 +145,14 @@ function DailyBarChart({ entries }: { entries: DailyEntry[] }) {
         <span className="text-xs text-slate-500">{formatDate(active.date)}</span>
         <span
           className={`text-sm font-semibold tabular-nums ${
-            active.score.total >= 100
+            perfectDay > 0 && active.score.total >= perfectDay
               ? 'text-sky-400'
               : active.score.total >= 0
                 ? 'text-slate-300'
                 : 'text-rose-400'
           }`}
         >
-          {active.score.total.toFixed(0)}%
+          {active.score.total} pts
         </span>
       </div>
 
@@ -159,16 +161,18 @@ function DailyBarChart({ entries }: { entries: DailyEntry[] }) {
         preserveAspectRatio="none"
         className="h-36 w-full overflow-visible"
       >
-        <line
-          x1={0}
-          y1={goalY}
-          x2={100}
-          y2={goalY}
-          stroke="#475569"
-          strokeWidth={0.5}
-          strokeDasharray="2,2"
-          vectorEffect="non-scaling-stroke"
-        />
+        {perfectDay > 0 && (
+          <line
+            x1={0}
+            y1={goalY}
+            x2={100}
+            y2={goalY}
+            stroke="#475569"
+            strokeWidth={0.5}
+            strokeDasharray="2,2"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
         <line
           x1={0}
           y1={baselineY}

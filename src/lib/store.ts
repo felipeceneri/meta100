@@ -1,10 +1,9 @@
 import { supabase } from './supabase'
-import type { BonusActivity, CheckIn, CheckInStatus, Habit } from '../types'
+import type { BonusActivity, CheckIn, CheckInStatus, Habit, LeaderboardEntry, Profile } from '../types'
 
 interface HabitRow {
   id: string
   name: string
-  weight: number | string
   active: boolean
   created_at: string
 }
@@ -19,7 +18,6 @@ interface BonusRow {
   id: string
   date: string
   description: string
-  points: number | string
   created_at: string
 }
 
@@ -33,7 +31,6 @@ function rowToHabit(r: HabitRow): Habit {
   return {
     id: r.id,
     name: r.name,
-    weight: Number(r.weight),
     active: r.active,
     createdAt: r.created_at,
   }
@@ -44,7 +41,6 @@ function rowToBonus(r: BonusRow): BonusActivity {
     id: r.id,
     date: r.date,
     description: r.description,
-    points: Number(r.points),
     createdAt: r.created_at,
   }
 }
@@ -52,7 +48,7 @@ function rowToBonus(r: BonusRow): BonusActivity {
 export async function getHabits(): Promise<Habit[]> {
   const { data, error } = await supabase
     .from('habits')
-    .select('id, name, weight, active, created_at')
+    .select('id, name, active, created_at')
     .order('created_at')
   if (error) throw error
   return (data as HabitRow[]).map(rowToHabit)
@@ -64,7 +60,6 @@ export async function saveHabit(habit: Habit): Promise<void> {
     id: habit.id,
     user_id: userId,
     name: habit.name,
-    weight: habit.weight,
     active: habit.active,
     created_at: habit.createdAt,
   })
@@ -102,7 +97,7 @@ export async function setCheckin(
 export async function getBonusActivities(): Promise<BonusActivity[]> {
   const { data, error } = await supabase
     .from('bonus_activities')
-    .select('id, date, description, points, created_at')
+    .select('id, date, description, created_at')
     .order('created_at')
   if (error) throw error
   return (data as BonusRow[]).map(rowToBonus)
@@ -115,7 +110,6 @@ export async function addBonusActivity(activity: BonusActivity): Promise<void> {
     user_id: userId,
     date: activity.date,
     description: activity.description,
-    points: activity.points,
     created_at: activity.createdAt,
   })
   if (error) throw error
@@ -124,4 +118,23 @@ export async function addBonusActivity(activity: BonusActivity): Promise<void> {
 export async function deleteBonusActivity(id: string): Promise<void> {
   const { error } = await supabase.from('bonus_activities').delete().eq('id', id)
   if (error) throw error
+}
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data ? { id: data.id, displayName: data.display_name } : null
+}
+
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const { data, error } = await supabase.rpc('get_leaderboard')
+  if (error) throw error
+  return ((data ?? []) as { display_name: string; total_points: number }[]).map((r) => ({
+    displayName: r.display_name,
+    totalPoints: Number(r.total_points),
+  }))
 }

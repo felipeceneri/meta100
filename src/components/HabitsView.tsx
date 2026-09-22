@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { Habit } from '../types'
 import { getHabits, saveHabit } from '../lib/store'
+import { HABIT_POINTS } from '../lib/scoring'
 
 export function HabitsView() {
   const [habits, setHabits] = useState<Habit[]>([])
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState('')
-  const [weight, setWeight] = useState(1)
 
   useEffect(() => {
     void load()
@@ -20,7 +20,6 @@ export function HabitsView() {
 
   const activeHabits = useMemo(() => habits.filter((h) => h.active), [habits])
   const archivedHabits = useMemo(() => habits.filter((h) => !h.active), [habits])
-  const totalWeight = useMemo(() => activeHabits.reduce((s, h) => s + h.weight, 0), [activeHabits])
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault()
@@ -28,17 +27,10 @@ export function HabitsView() {
     await saveHabit({
       id: crypto.randomUUID(),
       name: name.trim(),
-      weight,
       active: true,
       createdAt: new Date().toISOString(),
     })
     setName('')
-    setWeight(1)
-    await load()
-  }
-
-  async function handleWeightChange(habit: Habit, newWeight: number) {
-    await saveHabit({ ...habit, weight: newWeight })
     await load()
   }
 
@@ -66,13 +58,6 @@ export function HabitsView() {
             placeholder="ex: treinar, beber água..."
             className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-sky-500 focus:outline-none"
           />
-          <input
-            type="number"
-            min={1}
-            value={weight}
-            onChange={(e) => setWeight(Number(e.target.value))}
-            className="w-16 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
-          />
           <button
             type="submit"
             className="rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-sky-950 hover:bg-sky-400"
@@ -81,41 +66,29 @@ export function HabitsView() {
           </button>
         </div>
         <p className="mt-2 text-xs text-slate-500">
-          O peso é relativo entre os hábitos ativos — não precisa somar 100.
+          Todo hábito vale {HABIT_POINTS} pontos por check-in — fixo, pra manter o ranking justo.
         </p>
       </form>
 
       <div className="space-y-2">
-        {activeHabits.map((habit) => {
-          const pct = totalWeight > 0 ? (habit.weight / totalWeight) * 100 : 0
-          return (
-            <div
-              key={habit.id}
-              className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-4"
-            >
-              <div>
-                <p className="font-medium text-slate-100">{habit.name}</p>
-                <p className="text-xs text-slate-500">{pct.toFixed(0)}% da meta diária</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min={1}
-                  value={habit.weight}
-                  onChange={(e) => handleWeightChange(habit, Number(e.target.value))}
-                  className="w-14 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleArchive(habit)}
-                  className="text-xs text-slate-600 hover:text-rose-400"
-                >
-                  arquivar
-                </button>
-              </div>
+        {activeHabits.map((habit) => (
+          <div
+            key={habit.id}
+            className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 p-4"
+          >
+            <div>
+              <p className="font-medium text-slate-100">{habit.name}</p>
+              <p className="text-xs text-slate-500">{HABIT_POINTS} pontos por check-in</p>
             </div>
-          )
-        })}
+            <button
+              type="button"
+              onClick={() => handleArchive(habit)}
+              className="text-xs text-slate-600 hover:text-rose-400"
+            >
+              arquivar
+            </button>
+          </div>
+        ))}
         {activeHabits.length === 0 && (
           <p className="text-center text-sm text-slate-500">Nenhum hábito ativo ainda.</p>
         )}

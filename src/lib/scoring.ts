@@ -1,5 +1,8 @@
 import type { BonusActivity, CheckIn, DayScore, Habit } from '../types'
 
+export const HABIT_POINTS = 10
+export const BONUS_POINTS = 50
+
 export function todayISO(d = new Date()): string {
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')
@@ -7,7 +10,7 @@ export function todayISO(d = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
-// Usa só os hábitos ativos AGORA — arquivar um hábito recalcula o peso total
+// Usa só os hábitos ativos AGORA — arquivar um hábito recalcula o total
 // também pros dias passados no histórico. Aceitável enquanto não houver
 // necessidade real de congelar o conjunto de hábitos por dia.
 export function computeDayScore(
@@ -17,30 +20,24 @@ export function computeDayScore(
   date: string,
 ): DayScore {
   const activeHabits = habits.filter((h) => h.active)
-  const totalWeight = activeHabits.reduce((sum, h) => sum + h.weight, 0)
   const statusByHabit = new Map(
     checkins.filter((c) => c.date === date).map((c) => [c.habitId, c.status]),
   )
 
-  let weightedSum = 0
+  let habitPoints = 0
   for (const habit of activeHabits) {
     const status = statusByHabit.get(habit.id)
-    if (status === 'sim') weightedSum += habit.weight
-    else if (status === 'nao') weightedSum -= habit.weight
+    if (status === 'sim') habitPoints += HABIT_POINTS
+    else if (status === 'nao') habitPoints -= HABIT_POINTS
   }
 
-  const habitScore = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0
-  const bonusPoints = bonuses
-    .filter((b) => b.date === date)
-    .reduce((sum, b) => sum + b.points, 0)
+  const bonusCount = bonuses.filter((b) => b.date === date).length
+  const bonusPoints = bonusCount * BONUS_POINTS
 
   return {
-    habitScore: round1(habitScore),
-    bonusPoints: round1(bonusPoints),
-    total: round1(habitScore + bonusPoints),
+    habitPoints,
+    bonusPoints,
+    total: habitPoints + bonusPoints,
+    perfectDayPoints: activeHabits.length * HABIT_POINTS,
   }
-}
-
-function round1(n: number): number {
-  return Math.round(n * 10) / 10
 }

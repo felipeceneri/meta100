@@ -29,11 +29,12 @@ export function average(entries: DailyEntry[]): number {
   return Math.round((sum / entries.length) * 10) / 10
 }
 
-/** Dias consecutivos (a partir do mais recente) com pontuação >= 100%. */
+/** Dias consecutivos (a partir do mais recente) em que todo hábito ativo foi marcado "sim". */
 export function currentStreak(entries: DailyEntry[]): number {
   let streak = 0
   for (let i = entries.length - 1; i >= 0; i--) {
-    if (entries[i].score.total >= 100) streak++
+    const { habitPoints, perfectDayPoints } = entries[i].score
+    if (perfectDayPoints > 0 && habitPoints === perfectDayPoints) streak++
     else break
   }
   return streak
